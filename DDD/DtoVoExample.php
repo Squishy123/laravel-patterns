@@ -1,50 +1,58 @@
 <?php
 // Quick example of how we could make use of DTOs and VOs
 
-class ADto {
-    public $setVars = [];
-    public function __construct(...$values) {
+class ADto
+{
+    public $setOptionalVars = [];
+
+    public function __construct(...$values)
+    {
         // apply dynamic values
-        foreach($values as $k => $v) {
-            if(!property_exists($this, $k)) {
+        foreach ($values as $k => $v) {
+            if (!property_exists($this, $k)) {
                 continue;
             }
             $this->$k = $v;
-            $this->setVars[$k] = $v;
+            $this->setOptionalVars[$k] = $v;
         }
     }
-    
-    public function __get($property) {
-        if(isset($this->$property) && isset($this->setVars[$property])) {
+
+    public function __get($property)
+    {
+        if (isset($this->$property) && isset($this->setOptionalVars[$property])) {
             return $this->$property;
         }
         trigger_error('Undefined property ' . $property . '.', E_USER_WARNING);
     }
 
-    public function __set($property, $value) {
+    public function __set($property, $value)
+    {
         $this->$property = $value;
     }
 
-    public function properties() {
+    public function properties()
+    {
         $ref = new ReflectionClass($this);
-            return array_map(fn($p) => $p->name, $ref->getProperties());
+        return array_map(fn ($p) => $p->name, $ref->getProperties());
     }
 
-    public function valuesArr() {
+
+    public function valuesArr()
+    {
         $values = [];
-        foreach($this->properties() as $property) {
-            if(!isset($this->{$property}) && !isset($this->setVars[$property])) {
+        foreach ($this->properties() as $property) {
+            if (!isset($this->{$property}) && !isset($this->setOptionalVars[$property])) {
                 continue;
             }
-            $values[$property] = $this->{$property};  
+            $values[$property] = $this->{$property};
         }
-        unset($values['setVars']);
+        unset($values['setOptionalVars']);
         return $values;
-
     }
 
     //return values that are set and valid
-    public function values() {
+    public function values()
+    {
         return (object) $this->valuesArr();
     }
 }
@@ -56,7 +64,6 @@ class CreateAuctionLotDto extends ADto
     protected string $length, $width, $height, $weight, $starting, $removal, $reserve, $estimatedSellingPrice, $bin;
     protected string $description, $brand, $model, $internalReference, $internalLocation, $loadingMethod, $shippingMethod;
 
-   
     public function __construct(
         public string $auctionId, //required params come first
         public string $inventoryItemId,
@@ -68,19 +75,21 @@ class CreateAuctionLotDto extends ADto
         ...$values, //optional params are here
     ) {
         parent::__construct(...$values);
+
+        //perform validation
     }
 }
 
 $b = new CreateAuctionLotDto(
-auctionId: 5,
-inventoryItemId: 1,
-inventoryItemGroupId: 1,
-projectId: 1,
-number: "AbcD",
-title: "Auction Lot 1",
-condition: "N",
-bin: 'test',
-brand: 'hello world'
+    auctionId: 5,
+    inventoryItemId: 1,
+    inventoryItemGroupId: 1,
+    projectId: 1,
+    number: "AbcD",
+    title: "Auction Lot 1",
+    condition: "N",
+    bin: 'test',
+    brand: 'hello world'
 );
 
 //just a sample class
@@ -165,4 +174,3 @@ function createAuctionLot(
 
     return $createAuctionLotVo->auction;
 }
-
