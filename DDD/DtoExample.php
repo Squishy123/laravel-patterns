@@ -31,14 +31,14 @@ echo json_encode($greeting) . "\n";
 try {
     $greeting->message;
 } catch (Error $e) {
-    echo $e->getMessage() . "\n";
+    echo "Exception: " . $e->getMessage() . "\n";
 }
 
 //unable to access protected fields
 try {
     $greeting->cantTouchThis;
 } catch (Error $e) {
-    echo $e->getMessage() . "\n";
+    echo "Exception: " . $e->getMessage() . "\n";
 }
 
 // typing will try to auto-cast 
@@ -48,7 +48,7 @@ $greeting = new GreetingDto(
     age: '5', // That's why this still works
 );
 
-echo json_encode($greeting) . "\n";
+echo "Exception: " . json_encode($greeting) . "\n";
 
 
 // here we can see that type safety works
@@ -59,5 +59,5 @@ try {
         age: 'some random string',
     );
 } catch (Error $e) {
-    echo $e->getMessage() . "\n";
+    echo "Exception: " . $e->getMessage() . "\n";
 }
