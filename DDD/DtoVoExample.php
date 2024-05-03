@@ -1,9 +1,62 @@
 <?php
 // Quick example of how we could make use of DTOs and VOs
 
+class ADto {
+    public $setVars = [];
+    public function __construct(...$values) {
+        // apply dynamic values
+        foreach($values as $k => $v) {
+            if(!property_exists($this, $k)) {
+                continue;
+            }
+            $this->$k = $v;
+            $this->setVars[$k] = $v;
+        }
+    }
+    
+    public function __get($property) {
+        if(isset($this->$property) && isset($this->setVars[$property])) {
+            return $this->$property;
+        }
+        trigger_error('Undefined property ' . $property . '.', E_USER_WARNING);
+    }
+
+    public function __set($property, $value) {
+        $this->$property = $value;
+    }
+
+    public function properties() {
+        $ref = new ReflectionClass($this);
+            return array_map(fn($p) => $p->name, $ref->getProperties());
+    }
+
+    public function valuesArr() {
+        $values = [];
+        foreach($this->properties() as $property) {
+            if(!isset($this->{$property}) && !isset($this->setVars[$property])) {
+                continue;
+            }
+            $values[$property] = $this->{$property};  
+        }
+        unset($values['setVars']);
+        return $values;
+
+    }
+
+    //return values that are set and valid
+    public function values() {
+        return (object) $this->valuesArr();
+    }
+}
+
 // create a DTO for initial data coming in
-class CreateAuctionLotDto
+class CreateAuctionLotDto extends ADto
 {
+    //optional vars here
+    protected string $length, $width, $height, $weight, $starting, $removal, $reserve, $estimatedSellingPrice, $bin;
+    protected string $description, $brand, $model, $internalReference, $internalLocation, $loadingMethod, $shippingMethod;
+
+   
     public function __construct(
         public string $auctionId, //required params come first
         public string $inventoryItemId,
@@ -12,25 +65,23 @@ class CreateAuctionLotDto
         public string $number,
         public string $title,
         public string $condition,
-        public string $description = '', //optional params follow
-        public string $brand = '',
-        public string $model = '',
-        public string $internalReference = '',
-        public string $internalLocation = '',
-        public int $length = 0,
-        public int $width = 0,
-        public int $height = 0,
-        public int $weight = 0,
-        public int $starting = 0,
-        public int $removal = 0,
-        public int $reserve = 0,
-        public int $estimatedSellingPrice = 0,
-        public int $bin = 0,
-        public string $loadingMethod = '',
-        public string $shippingMethod = ''
+        ...$values, //optional params are here
     ) {
+        parent::__construct(...$values);
     }
 }
+
+$b = new CreateAuctionLotDto(
+auctionId: 5,
+inventoryItemId: 1,
+inventoryItemGroupId: 1,
+projectId: 1,
+number: "AbcD",
+title: "Auction Lot 1",
+condition: "N",
+bin: 'test',
+brand: 'hello world'
+);
 
 //just a sample class
 class Auction
@@ -103,3 +154,15 @@ echo json_encode(new CreateAuctionLotVo(new CreateAuctionLotDto(
     title: "Auction Lot 1",
     condition: "N"
 ))) . "\n";
+
+
+//example of a request call
+function createAuctionLot(
+    CreateAuctionLotDto $createAuctionLotDto //type safety check
+): Auction {
+    $createAuctionLotVo = new CreateAuctionLotVo($createAuctionLotDto);
+    $createAuctionLotVo->auction; // do some processing here
+
+    return $createAuctionLotVo->auction;
+}
+
